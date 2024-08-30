@@ -1,76 +1,73 @@
 package org.emp3r0r7
 
-import android.annotation.SuppressLint
-import android.hardware.Sensor
-import android.hardware.SensorEvent
-import android.hardware.SensorEventListener
-import android.hardware.SensorManager
+import android.content.Intent
 import android.os.Bundle
-import android.util.Log
-import android.widget.TextView
+import android.widget.Button
+import android.widget.EditText
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import okhttp3.WebSocketListener
+import org.emp3r0r7.activity.GyroscopeActivity
+import org.emp3r0r7.network.WebSocketClient
+import java.util.concurrent.CompletableFuture
 
-class MainActivity : AppCompatActivity(), SensorEventListener {
+class MainActivity : AppCompatActivity() {
 
-    private lateinit var sensorManager: SensorManager
-    private lateinit var rotationVectorSensor: Sensor
-
-    private lateinit var yawTextView: TextView
-    private lateinit var pitchTextView: TextView
-    private lateinit var rollTextView: TextView
+    private lateinit var ipAddressEditText: EditText
+    private lateinit var portEditText: EditText
+    private lateinit var connectButton: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // Inizializza il SensorManager e il sensore di rotazione
-        sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager
+        ipAddressEditText = findViewById(R.id.ipAddressEditText)
+        portEditText = findViewById(R.id.portEditText)
+        connectButton = findViewById(R.id.connectButton)
 
-        sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)?.let {
-            rotationVectorSensor = it
-        }
+        connectButton.setOnClickListener {
+            val ipAddress = ipAddressEditText.text.toString().trim()
+            val port = portEditText.text.toString().trim()
 
-        // Associa i TextView alle loro rispettive viste nel layout
-        yawTextView = findViewById(R.id.yawTextView)
-        pitchTextView = findViewById(R.id.pitchTextView)
-        rollTextView = findViewById(R.id.rollTextView)
-    }
-
-    override fun onResume() {
-        super.onResume()
-        sensorManager.registerListener(this, rotationVectorSensor, SensorManager.SENSOR_DELAY_FASTEST)
-    }
-
-    override fun onPause() {
-        super.onPause()
-        sensorManager.unregisterListener(this)
-    }
-
-    @SuppressLint("SetTextI18n")
-    override fun onSensorChanged(event: SensorEvent?) {
-        if (event?.sensor?.type == Sensor.TYPE_ROTATION_VECTOR) {
-            // Ottieni la matrice di rotazione dal vettore di rotazione
-            val rotationMatrix = FloatArray(9)
-            SensorManager.getRotationMatrixFromVector(rotationMatrix, event.values)
-
-            // Ottieni yaw, pitch e roll dalla matrice di rotazione
-            val orientation = FloatArray(3)
-            SensorManager.getOrientation(rotationMatrix, orientation)
-
-            val yaw = Math.toDegrees(orientation[0].toDouble()).toFloat()
-            val pitch = Math.toDegrees(orientation[1].toDouble()).toFloat()
-            val roll = Math.toDegrees(orientation[2].toDouble()).toFloat()
-
-            // Aggiorna i TextView con i nuovi valori
-            yawTextView.text = "Yaw: %.2f".format(yaw)
-            pitchTextView.text = "Pitch: %.2f".format(pitch)
-            rollTextView.text = "Roll: %.2f".format(roll)
-
-            // Stampa i valori nel log (opzionale)
-            //Log.d("SensorData", "Yaw: $yaw, Pitch: $pitch, Roll: $roll")
+            if (ipAddress.isNotEmpty() && port.isNotEmpty()) {
+                try {
+                    val portNumber = port.toInt()
+                    tryWebSocketConnection(ipAddress, portNumber).thenAccept { connectionSuccessful ->
+                        runOnUiThread {
+                            if (connectionSuccessful) {
+                                // Passa all'activity del giroscopio se la connessione è riuscita
+                                val intent = Intent(this, GyroscopeActivity::class.java)
+                                intent.putExtra("ipAddress", ipAddress)
+                                intent.putExtra("port", portNumber)
+                                startActivity(intent)
+                            } else {
+                                // Mostra un Toast se la connessione fallisce
+                                Toast.makeText(this, "Failed to connect to WebSocket", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    }
+                } catch (e: NumberFormatException) {
+                    Toast.makeText(this, "Please enter a valid port number", Toast.LENGTH_SHORT).show()
+                }
+            } else {
+                Toast.makeText(this, "Please enter both IP address and port", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
-    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
+    private fun tryWebSocketConnection(ipAddress: String, port: Int): CompletableFuture<Boolean> {
+        val completableFuture = CompletableFuture<Boolean>()
 
+        WebSocketClient.start(ipAddress, port, object : WebSocketListener() {
+            override fun onOpen(webSocket: okhttp3.WebSocket, response: okhttp3.Response) {
+                completableFuture.complete(true)
+            }
+
+            override fun onFailure(webSocket: okhttp3.WebSocket, t: Throwable, response: okhttp3.Response?) {
+                completableFuture.complete(false)
+            }
+        })
+
+        return completableFuture
+    }
 }

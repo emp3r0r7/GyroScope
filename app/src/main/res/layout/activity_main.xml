@@ -3,30 +3,27 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:gravity="center"
     android:padding="16dp">
 
-    <TextView
-        android:id="@+id/yawTextView"
-        android:layout_width="wrap_content"
+    <EditText
+        android:id="@+id/ipAddressEditText"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Yaw: 0.0"
-        android:textSize="24sp"
-        android:layout_marginBottom="16dp"/>
+        android:hint="Enter IP Address"
+        android:inputType="text"/>
 
-    <TextView
-        android:id="@+id/pitchTextView"
-        android:layout_width="wrap_content"
+    <EditText
+        android:id="@+id/portEditText"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Pitch: 0.0"
-        android:textSize="24sp"
-        android:layout_marginBottom="16dp"/>
+        android:hint="Enter Port"
+        android:inputType="number"/>
 
-    <TextView
-        android:id="@+id/rollTextView"
+    <Button
+        android:id="@+id/connectButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Roll: 0.0"
-        android:textSize="24sp"/>
+        android:text="Connect"
+        android:layout_gravity="center"/>
 
 </LinearLayout>
