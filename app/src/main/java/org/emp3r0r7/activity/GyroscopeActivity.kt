@@ -7,6 +7,7 @@ import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.os.Bundle
 import android.widget.TextView
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import org.emp3r0r7.R
 import org.emp3r0r7.network.WebSocketClient
@@ -35,17 +36,15 @@ class GyroscopeActivity : AppCompatActivity(), SensorEventListener {
         yawTextView = findViewById(R.id.yawTextView)
         pitchTextView = findViewById(R.id.pitchTextView)
         rollTextView = findViewById(R.id.rollTextView)
+
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                WebSocketClient.close()
+                finish()
+            }
+        })
     }
 
-    override fun onResume() {
-        super.onResume()
-        sensorManager.registerListener(this, rotationVectorSensor, SensorManager.SENSOR_DELAY_FASTEST)
-    }
-
-    override fun onPause() {
-        super.onPause()
-        sensorManager.unregisterListener(this)
-    }
 
     @SuppressLint("SetTextI18n")
     override fun onSensorChanged(event: SensorEvent?) {
@@ -63,14 +62,31 @@ class GyroscopeActivity : AppCompatActivity(), SensorEventListener {
             val roll = Math.toDegrees(orientation[2].toDouble()).toFloat()
 
             // Aggiorna i TextView con i nuovi valori
-            yawTextView.text = "Yaw: %.2f".format(yaw)
-            pitchTextView.text = "Pitch: %.2f".format(pitch)
-            rollTextView.text = "Roll: %.2f".format(roll)
+            yawTextView.text = "Yaw (Z) : %.2f".format(yaw)
+            pitchTextView.text = "Pitch (X): %.2f".format(pitch)
+            rollTextView.text = "Roll (Y): %.2f".format(roll)
 
             // Invia i dati tramite WebSocket
-            WebSocketClient.sendData("Roll: $roll, Pitch: $pitch, Yaw: $yaw")
+            WebSocketClient.sendData("Y=$roll|X=$pitch|Z=$yaw")
         }
     }
 
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
+
+    override fun onDestroy() {
+        super.onDestroy()
+        WebSocketClient.close()
+        finish()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        sensorManager.registerListener(this, rotationVectorSensor, SensorManager.SENSOR_DELAY_FASTEST)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        sensorManager.unregisterListener(this)
+    }
+
 }
