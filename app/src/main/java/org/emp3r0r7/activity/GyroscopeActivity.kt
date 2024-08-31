@@ -46,7 +46,7 @@ class GyroscopeActivity : AppCompatActivity(), SensorEventListener {
     }
 
 
-    @SuppressLint("SetTextI18n")
+    @SuppressLint("SetTextI18n", "DefaultLocale")
     override fun onSensorChanged(event: SensorEvent?) {
         if (event?.sensor?.type == Sensor.TYPE_ROTATION_VECTOR) {
             // Ottieni la matrice di rotazione dal vettore di rotazione
@@ -61,13 +61,19 @@ class GyroscopeActivity : AppCompatActivity(), SensorEventListener {
             val pitch = Math.toDegrees(orientation[1].toDouble()).toFloat()
             val roll = Math.toDegrees(orientation[2].toDouble()).toFloat()
 
+            // Formatta i valori come decimali normali
+            val formattedYaw = String.format("%.6f", yaw)
+            val formattedPitch = String.format("%.6f", pitch)
+            val formattedRoll = String.format("%.6f", roll)
+
             // Aggiorna i TextView con i nuovi valori
-            yawTextView.text = "Yaw (Z) : %.2f".format(yaw)
-            pitchTextView.text = "Pitch (X): %.2f".format(pitch)
-            rollTextView.text = "Roll (Y): %.2f".format(roll)
+            yawTextView.text = "Yaw (Z) : $formattedYaw"
+            pitchTextView.text = "Pitch (X): $formattedPitch"
+            rollTextView.text = "Roll (Y): $formattedRoll"
 
             // Invia i dati tramite WebSocket
-            WebSocketClient.sendData("Y=$roll|X=$pitch|Z=$yaw")
+            WebSocketClient.sendData("Y=$formattedRoll|X=$formattedPitch|Z=$formattedYaw")
+
         }
     }
 
@@ -81,7 +87,7 @@ class GyroscopeActivity : AppCompatActivity(), SensorEventListener {
 
     override fun onResume() {
         super.onResume()
-        sensorManager.registerListener(this, rotationVectorSensor, SensorManager.SENSOR_DELAY_FASTEST)
+        sensorManager.registerListener(this, rotationVectorSensor, SensorManager.SENSOR_STATUS_ACCURACY_HIGH)
     }
 
     override fun onPause() {
