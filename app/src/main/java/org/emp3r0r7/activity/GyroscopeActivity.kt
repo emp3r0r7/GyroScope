@@ -106,9 +106,4 @@ class GyroscopeActivity : AppCompatActivity(), SensorEventListener {
         sensorManager.registerListener(this, rotationVectorSensor, SensorManager.SENSOR_DELAY_FASTEST)
     }
 
-    override fun onPause() {
-        super.onPause()
-        sensorManager.unregisterListener(this)
-    }
-
 }
