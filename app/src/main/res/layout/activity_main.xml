@@ -26,4 +26,12 @@
         android:text="Connect"
         android:layout_gravity="center"/>
 
+    <Button
+        android:layout_marginTop="200sp"
+        android:id="@+id/debugButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Debug"
+        android:layout_gravity="center"/>
+
 </LinearLayout>

@@ -16,6 +16,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var ipAddressEditText: EditText
     private lateinit var portEditText: EditText
     private lateinit var connectButton: Button
+    private lateinit var debugButton: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -24,6 +25,15 @@ class MainActivity : AppCompatActivity() {
         ipAddressEditText = findViewById(R.id.ipAddressEditText)
         portEditText = findViewById(R.id.portEditText)
         connectButton = findViewById(R.id.connectButton)
+        debugButton = findViewById(R.id.debugButton)
+
+        debugButton.setOnClickListener{
+
+            val intent = Intent(this, GyroscopeActivity::class.java)
+            intent.putExtra("debug", true)
+            startActivity(intent)
+
+        }
 
         connectButton.setOnClickListener {
             val ipAddress = ipAddressEditText.text.toString().trim()
@@ -34,17 +44,16 @@ class MainActivity : AppCompatActivity() {
                     val portNumber = port.toInt()
                     tryWebSocketConnection(ipAddress, portNumber).thenAccept { connectionSuccessful ->
                         runOnUiThread {
+
                             if (connectionSuccessful) {
-                                // Passa all'activity del giroscopio se la connessione è riuscita
                                 val intent = Intent(this, GyroscopeActivity::class.java)
-                                intent.putExtra("ipAddress", ipAddress)
-                                intent.putExtra("port", portNumber)
+                                intent.putExtra("debug", false)
                                 startActivity(intent)
-                            } else {
-                                // Mostra un Toast se la connessione fallisce
+                            } else
                                 Toast.makeText(this, "Failed to connect to WebSocket", Toast.LENGTH_SHORT).show()
-                            }
+
                         }
+
                     }
                 } catch (e: NumberFormatException) {
                     Toast.makeText(this, "Please enter a valid port number", Toast.LENGTH_SHORT).show()
