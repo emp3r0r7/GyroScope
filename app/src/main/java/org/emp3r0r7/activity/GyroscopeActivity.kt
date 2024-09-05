@@ -23,6 +23,11 @@ class GyroscopeActivity : AppCompatActivity(), SensorEventListener {
     private lateinit var rollTextView: TextView
     private var debugMode = false
 
+    private var filteredYaw = 0.0f
+    private val alpha = 0.1f
+    private var lastScreenUpdateTime: Long = 0
+    private val screenUpdateInterval: Long = 500
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_gyroscope)
@@ -47,13 +52,11 @@ class GyroscopeActivity : AppCompatActivity(), SensorEventListener {
         })
     }
 
-
-    private var filteredYaw = 0.0f
-    private val alpha = 0.1f  // Coefficiente del filtro (puoi aggiustarlo in base alle necessità)
-
     @SuppressLint("SetTextI18n", "DefaultLocale")
     override fun onSensorChanged(event: SensorEvent?) {
         if (event?.sensor?.type == Sensor.TYPE_ROTATION_VECTOR) {
+
+            val now = System.currentTimeMillis()
             val rotationMatrix = FloatArray(9)
             SensorManager.getRotationMatrixFromVector(rotationMatrix, event.values)
 
@@ -72,14 +75,19 @@ class GyroscopeActivity : AppCompatActivity(), SensorEventListener {
             val formattedPitch = String.format("%.6f", pitch)
             val formattedRoll = String.format("%.6f", roll)
 
-            // Aggiorna i TextView con i nuovi valori
-            yawTextView.text = "Yaw (Z) : $formattedYaw"
-            pitchTextView.text = "Pitch (X): $formattedPitch"
-            rollTextView.text = "Roll (Y): $formattedRoll"
+            // throttling for better battery saving
+            if (now - lastScreenUpdateTime >= screenUpdateInterval) {
+                yawTextView.text = "Yaw (Z) : $formattedYaw"
+                pitchTextView.text = "Pitch (X): $formattedPitch"
+                rollTextView.text = "Roll (Y): $formattedRoll"
+
+                lastScreenUpdateTime = now
+            }
 
             // Invia i dati tramite WebSocket solo se non in debug mode
             if(!debugMode)
                 WebSocketClient.sendData("Y=$formattedRoll|X=$formattedPitch|Z=$formattedYaw")
+
         }
     }
 
